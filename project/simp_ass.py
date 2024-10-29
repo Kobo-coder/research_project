@@ -6,7 +6,7 @@ class SimplifyingAssumption1(Scene):
         pos_edges = [(1,3), (2,3)]
         neg_edges = [(3,4), (3,5), (3,6)]
 
-        lt = {1: [-1, 1, 0], 2: [-1, -1, 0], 3: [0, 0, 0], 4: [2, 1, 0], 5: [2, 0, 0], 6: [2, -1, 0]}
+        lt = {1: [-2, 1, 0], 2: [-2, -1, 0], 3: [0, 0, 0], 4: [2, 1, 0], 5: [2, 0, 0], 6: [2, -1, 0]}
         g = DiGraph(vertices, pos_edges+neg_edges, layout=lt,
                   vertex_config={3: {"fill_color": RED}},
                   edge_config={"tip_config": {"tip_length": 0.2, "tip_width": 0.2},
@@ -18,18 +18,20 @@ class SimplifyingAssumption1(Scene):
         self.wait()
 
         edge_labels = {
-            (3, 4): MathTex(r"w_1").set_color(RED).next_to(g.edges[(3,4)].get_midpoint(), UP),
-            (3, 5): MathTex(r"w_2").set_color(RED).next_to(g.edges[(3,5)].get_midpoint(), DOWN*RIGHT),
-            (3, 6): MathTex(r"w_3").set_color(RED).next_to(g.edges[(3,6)].get_midpoint(), DOWN),
+            (3, 4): MathTex(r"w_1", "- w^*").set_color(RED).next_to(g.vertices[4].get_midpoint(), RIGHT*1.4),
+            (3, 5): MathTex(r"w_2", "- w^*").set_color(RED).next_to(g.vertices[5].get_midpoint(), RIGHT*1.4),
+            (3, 6): MathTex(r"w_3", "- w^*").set_color(RED).next_to(g.vertices[6].get_midpoint(), RIGHT*1.4)
         }
 
+
         for k in edge_labels:
+             edge_labels[k][1].set_opacity(0)
              self.play(FadeToColor(g.vertices[3], RED),
                        #Uncreate(g.edges[k]),
                        #Create(g.edges[k].set_stroke(color=RED)),
-                       Write(edge_labels[k]),
+                       Write(edge_labels[k][0]),
                        FadeToColor(g.edges[k], RED))
-            ## Ide: gør dem rød, når der kommer vægt på
+             ## Ide: gør dem rød, når der kommer vægt på
 
         self.wait()
 
@@ -49,9 +51,9 @@ class SimplifyingAssumption1(Scene):
         self.wait()
 
         self.play(
-            TransformFromCopy(edge_labels[(3, 4)], formula[2].copy().set_opacity(1)),
-            TransformFromCopy(edge_labels[(3, 5)], formula[4].copy().set_opacity(1)),
-            TransformFromCopy(edge_labels[(3, 6)], formula[6].copy().set_opacity(1)),
+            TransformFromCopy(edge_labels[(3, 4)][0], formula[2].copy().set_opacity(1)),
+            TransformFromCopy(edge_labels[(3, 5)][0], formula[4].copy().set_opacity(1)),
+            TransformFromCopy(edge_labels[(3, 6)][0], formula[6].copy().set_opacity(1)),
         )
 
 
@@ -61,23 +63,33 @@ class SimplifyingAssumption1(Scene):
 
         new_edges = [(1, 7), (2, 7), (7, 3)]
         neg_cluster = [3,4,5,6]
+        pos_cluster = [1,2,7]
 
         self.play(
-            Create(g.add_edges(*new_edges)),
             [g.vertices[e].animate.shift(RIGHT * 1) for e in neg_cluster],
+            [g.vertices[e].animate.shift(LEFT * 1) for e in pos_cluster],
             [g.edges[edge].animate.shift(RIGHT * 1) for edge in neg_edges],
+            [g.edges[edge].animate.shift(LEFT * 1) for edge in pos_edges],
             [l.animate.shift(RIGHT * 1) for l in edge_labels.values()]
         )
+
         self.wait()
 
         new_neg_edge = (7, 3)
-        w_star_copy = MathTex(r"w^*").set_color(RED).next_to(g.edges[(7,3)].get_midpoint(), RIGHT)
+        g.add_edges(*new_edges)
+        w_star_copy = MathTex(r"w^*").set_color(RED).next_to(g.edges[(7,3)].get_midpoint()).shift(DOWN*0.4)
         self.play(
-            [FadeToColor(g.edges[edge], WHITE) for edge in neg_edges],
-            FadeToColor(g.vertices[3], WHITE),
             FadeToColor(g.vertices[7], RED),
             Create(g.add_edges(new_neg_edge, edge_config={(7, 3): {"stroke_color": RED}})),
-            TransformFromCopy(formula[0], w_star_copy)
+            TransformFromCopy(formula[0], w_star_copy),
+        )
+
+        self.wait()
+        self.play(
+            FadeToColor(g.vertices[3], WHITE),
+            [FadeToColor(l, WHITE) for l in edge_labels.values()],
+            [FadeToColor(g.edges[edge], WHITE) for edge in neg_edges],
+            [TransformFromCopy(formula[0], l[1].copy().set_opacity(1).set_color(WHITE)) for l in edge_labels.values()],
         )
 
         self.wait()
