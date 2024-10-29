@@ -77,7 +77,7 @@ class SimplifyingAssumption1(Scene):
 
         new_neg_edge = (7, 3)
         g.add_edges(*new_edges)
-        w_star_copy = MathTex(r"w^*").set_color(RED).next_to(g.edges[(7,3)].get_midpoint()).shift(DOWN*0.4)
+        w_star_copy = MathTex(r"w^*").set_color(RED).next_to(g.edges[(7,3)].get_midpoint()).shift(DOWN*0.4).shift(LEFT*0.4)
         self.play(
             FadeToColor(g.vertices[7], RED),
             Create(g.add_edges(new_neg_edge, edge_config={(7, 3): {"stroke_color": RED}})),
