@@ -9,16 +9,51 @@ class SimplifyingAssumption1(Scene):
         lt = {1: [-1, 1, 0], 2: [-1, -1, 0], 3: [0, 0, 0], 4: [2, 1, 0], 5: [2, 0, 0], 6: [2, -1, 0]}
         g = DiGraph(vertices, pos_edges+neg_edges, layout=lt,
                   vertex_config={3: {"fill_color": RED}},
-                  edge_config={(3, 4): {"stroke_color": RED},
-                               (3, 5): {"stroke_color": RED},
-                               (3, 6): {"stroke_color": RED},
-                               "tip_config": {"tip_length": 0.2, "tip_width": 0.2}})
+                  edge_config={"tip_config": {"tip_length": 0.2, "tip_width": 0.2},
+                                (3, 4): {"stroke_color": RED},
+                                (3, 5): {"stroke_color": RED},
+                                (3, 6): {"stroke_color": RED}
+                                })
         self.play(Create(g))
+        self.wait()
+
+        edge_labels = {
+            (3, 4): MathTex(r"w_1").set_color(RED).next_to(g.edges[(3,4)].get_midpoint(), UP),
+            (3, 5): MathTex(r"w_2").set_color(RED).next_to(g.edges[(3,5)].get_midpoint(), DOWN*RIGHT),
+            (3, 6): MathTex(r"w_3").set_color(RED).next_to(g.edges[(3,6)].get_midpoint(), DOWN),
+        }
+
+        for k in edge_labels:
+             self.play(FadeToColor(g.vertices[3], RED),
+                       #Uncreate(g.edges[k]),
+                       #Create(g.edges[k].set_stroke(color=RED)),
+                       Write(edge_labels[k]),
+                       FadeToColor(g.edges[k], RED))
+            ## Ide: gør dem rød, når der kommer vægt på
+
         self.wait()
 
         self.play(
             Flash(g.vertices[3], color=RED)
         )
+
+
+        formula = MathTex(r"w^*", " = \min(", "w_1", ",", "w_2", ",", "w_3", ")")
+        formula.shift(UP*2.5)
+
+        formula[2].set_opacity(0)
+        formula[4].set_opacity(0)
+        formula[6].set_opacity(0)
+
+        self.play(Write(formula[0]), Write(formula[1]), Write(formula[3]), Write(formula[5]), Write(formula[7]))
+        self.wait()
+
+        self.play(
+            TransformFromCopy(edge_labels[(3, 4)], formula[2].copy().set_opacity(1)),
+            TransformFromCopy(edge_labels[(3, 5)], formula[4].copy().set_opacity(1)),
+            TransformFromCopy(edge_labels[(3, 6)], formula[6].copy().set_opacity(1)),
+        )
+
 
         # Add new vertex 7 and position it
         new_vertex = 7
@@ -30,16 +65,19 @@ class SimplifyingAssumption1(Scene):
         self.play(
             Create(g.add_edges(*new_edges)),
             [g.vertices[e].animate.shift(RIGHT * 1) for e in neg_cluster],
-            [g.edges[edge].animate.shift(RIGHT * 1) for edge in neg_edges]
+            [g.edges[edge].animate.shift(RIGHT * 1) for edge in neg_edges],
+            [l.animate.shift(RIGHT * 1) for l in edge_labels.values()]
         )
         self.wait()
 
         new_neg_edge = (7, 3)
+        w_star_copy = MathTex(r"w^*").set_color(RED).next_to(g.edges[(7,3)].get_midpoint(), RIGHT)
         self.play(
             [FadeToColor(g.edges[edge], WHITE) for edge in neg_edges],
             FadeToColor(g.vertices[3], WHITE),
             FadeToColor(g.vertices[7], RED),
-            Create(g.add_edges(new_neg_edge, edge_config={(7, 3): {"stroke_color": RED}}))
+            Create(g.add_edges(new_neg_edge, edge_config={(7, 3): {"stroke_color": RED}})),
+            TransformFromCopy(formula[0], w_star_copy)
         )
 
         self.wait()
