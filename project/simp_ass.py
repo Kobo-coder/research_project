@@ -59,24 +59,30 @@ class SimplifyingAssumption1(Scene):
 
         # Add new vertex 7 and position it
         new_vertex = 7
-        g.add_vertices(new_vertex, positions={7: [0, 0, 0]})
+        g.add_vertices(new_vertex, positions={7: [0, 0, 0]},vertex_config={7: {"fill_color": RED}})
 
         new_edges = [(1, 7), (2, 7), (7, 3)]
         neg_cluster = [3,4,5,6]
         pos_cluster = [1,2,7]
 
+        g.remove_edges(*pos_edges)
+        pos_edges = [(1, 7), (2, 7)]
+        g.add_edges(*new_edges)
+        
+
         self.play(
-            [g.vertices[e].animate.shift(RIGHT * 1) for e in neg_cluster],
-            [g.vertices[e].animate.shift(LEFT * 1) for e in pos_cluster],
-            [g.edges[edge].animate.shift(RIGHT * 1) for edge in neg_edges],
-            [g.edges[edge].animate.shift(LEFT * 1) for edge in pos_edges],
-            [l.animate.shift(RIGHT * 1) for l in edge_labels.values()]
+            AnimationGroup(
+            *[g.vertices[e].animate.shift(RIGHT * 1) for e in neg_cluster],
+            *[g.vertices[e].animate.shift(LEFT * 1) for e in pos_cluster],
+            *[g.edges[edge].animate.shift(RIGHT * 1) for edge in neg_edges],
+            *[g.edges[edge].animate.shift(LEFT * 1) for edge in pos_edges],
+            *[l.animate.shift(RIGHT * 1) for l in edge_labels.values()]
+            )
         )
 
         self.wait()
 
         new_neg_edge = (7, 3)
-        g.add_edges(*new_edges)
         w_star_copy = MathTex(r"w^*").set_color(RED).next_to(g.edges[(7,3)].get_midpoint()).shift(DOWN*0.4).shift(LEFT*0.4)
         self.play(
             FadeToColor(g.vertices[7], RED),
