@@ -27,8 +27,6 @@ class SimplifyingAssumption1(Scene):
         for k in edge_labels:
              edge_labels[k][1].set_opacity(0)
              self.play(FadeToColor(g.vertices[3], RED),
-                       #Uncreate(g.edges[k]),
-                       #Create(g.edges[k].set_stroke(color=RED)),
                        Write(edge_labels[k][0]),
                        FadeToColor(g.edges[k], RED))
              ## Ide: gør dem rød, når der kommer vægt på
