@@ -1,8 +1,6 @@
 from manim import *
 from collections import defaultdict
 import numpy as np
-from scipy.fftpack import shift
-
 
 class SimplifyingAssumption2(Scene):
     def construct(self):
@@ -154,18 +152,10 @@ class SimplifyingAssumption2(Scene):
         )
         self.wait()
 
-        self.play(
-            AnimationGroup(
-                # Create(i.vertices[1]),
-                # Create(i.vertices[2]),
-                # Create(i.vertices[13]),
-                # Create(i.edges[(1, 13)]),
-                # Create(i.edges[(1, 14)]),
-                # Create(i.edges[(2, 15)]),
-                # Create(i.edges[(2, 16)])
-                FadeIn(i)
-            )
-        )
+        self.play(FadeIn(i))
+        self.wait()
+        self.play(FadeOut(h))
+        self.wait()
 
 
 
