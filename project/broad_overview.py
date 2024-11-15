@@ -8,87 +8,86 @@ def generate_edge_config(neg_edges):
         edge_config[e] = {"stroke_color": RED}
     return edge_config
 
+def is_position_valid(x, y, existing_positions, min_dist):
+    for pos in existing_positions:
+        if np.sqrt((pos[0] - x) ** 2 + (pos[1] - y) ** 2) < min_dist:
+            return False
+    return True
+
+def generate_vertex_layout(vertices, boundaries, min_distance=0.5):
+    x_bound, y_bound = boundaries
+
+    layout = {}
+
+    x = np.linspace(x_bound, -x_bound, 12)
+    y = np.linspace(y_bound, -y_bound, 8)
+
+    xs, ys = np.meshgrid(x, y)
+    points = [(x, y) for x, y in zip(xs.flatten(), ys.flatten())]
+
+    for v in vertices:
+        x,y = points[v-1]
+        placed = False
+        attempts = 0
+
+        while not placed and attempts < 1000:
+            x += rand.uniform(-0.3, 0.3)
+            y += rand.uniform(-0.3, 0.3)
+
+            x = max(min(x, x_bound - 0.2), -x_bound + 0.2)
+            y = max(min(y, y_bound - 0.2), -y_bound + 0.2)
+
+            if is_position_valid(x, y, [pos for pos in layout.values()], min_distance):
+                layout[v] = [x, y, 0]
+                placed = True
+
+            attempts += 1
+
+            if attempts % 100 == 0:
+                min_distance *= 0.95
+
+    return layout
+
+def generate_edges(layout, min_edges_per_vertex=2, max_edges_per_vertex=6, max_edge_length=4.0):
+    edges = []
+    neg_edges = []
+    pos_edges = []
+    vertices = list(layout.keys())
+
+    def distance(v1, v2):
+        return np.sqrt(sum((a - b) ** 2 for a, b in zip(layout[v1], layout[v2])))
+
+    for v in vertices:
+        distances = [(u, distance(v, u)) for u in vertices if u != v]
+        distances.sort(key=lambda x: x[1])
+
+        num_edges = np.random.randint(min_edges_per_vertex, max_edges_per_vertex + 1)
+        for u, dist in distances:
+            if dist <= max_edge_length:
+                if len([(e1, e2) for e1, e2 in edges if (e1 == v and e2 == u) or (e1 == u and e2 == v)]) == 0:
+                    edge = (min(u,v), max(u,v))
+                    edges.append(edge)
+
+                    if rand.choices([0, 1], [0.7, 0.3], k=1)[0]:
+                        neg_edges.append(edge)
+                    else:
+                        pos_edges.append(edge)
+
+                    if len([e for e in edges if v in e]) >= num_edges:
+                        break
+    return edges, pos_edges, neg_edges
+
+
 class BroadOverview(Scene):
 
     def construct(self):
-        num_of_vertices = 52
+        num_of_vertices = 96
         vertices = [v for v in range(1, num_of_vertices+1)]
 
-        edges = [
-            (1, 2), (1, 3), (3, 4), (2, 9), (4, 5), (5, 7), (5, 13), (5, 19), (5, 25), (6, 7), (7, 11), (7, 13), (7,9), (8, 9), (8, 20), (9,10),
-            (10, 12), (11, 13), (12, 16), (13, 16), (11,14), (14, 15), (15, 17), (16, 18), (17, 18), (18, 19),
-            (20,21), (21,22), (21,23), (23,24), (23, 25), (23,29), (25, 29), (25, 26), (26, 27), (27, 28),(25, 30), (27, 31), (29, 30),
-            (30, 32), (30, 33), (31, 33), (32, 34),(31, 37), (33, 34), (34, 46), (34, 41), (34, 43),(35, 44), (36, 37), (36, 48),(37, 38), (38, 40), (38, 39),
-            (40, 49), (41,42), (41, 44), (42, 43), (43, 44), (44, 45), (45, 46), (46, 47), (47, 50), (48, 49), (48, 50), (48, 51), (50, 51), (50, 52), (51, 52)
-        ]
-        num_of_edges = len(edges)
+        layout = generate_vertex_layout(vertices, (6, 3.5))
+        edges, pos_edges, neg_edges = generate_edges(layout)
 
-        pos_edges = []
-        neg_edges = []
-
-        layout = {
-            1: [-6, 2.5, 0],
-            2: [-6.5, 1.5, 0],
-            3: [-5, 2, 0],
-            4: [-3, 2.5, 0],
-            5: [-2.5, 1, 0],
-            6: [-3.5, 1.5, 0],
-            7: [-4, 0, 0],
-            8: [-5.5, 1, 0],
-            9: [-5, 0.5, 0],
-            10: [-6, -0.5, 0],
-            11: [-4.5, -1, 0],
-            12: [-5.5, -1.5, 0],
-            13: [-3, 0, 0],
-            14: [-4, -2, 0],
-            15: [-3, -2.5, 0],
-            16: [-2.5, -1.5, 0],
-            17: [-1.5, -2, 0],
-            18: [-1, -1, 0],
-            19: [-1, 0.5, 0],
-            20: [-1.5, 1.5, 0],
-            21: [0, 2, 0],
-            22: [-0.5, 2.5, 0],
-            23: [1, 2, 0],
-            24: [1, 2.8, 0],
-            25: [0.5, 0.5, 0],
-            26: [1, -0.5, 0],
-            27: [1.5, -1.5, 0],
-            28: [1, -2.5, 0],
-            29: [2, 1, 0],
-            30: [2.5, 0, 0],
-            31: [2.5, -1.5, 0],
-            32: [3.5, 2, 0],
-            33: [3, 0, 0],
-            34: [3.5, 1, 0],
-            35: [3, 1.5, 0],
-            36: [2, -1, 0],
-            37: [3, -2, 0],
-            38: [2, -2, 0],
-            39: [1.5, -3, 0],
-            40: [3.5, -2.5, 0],
-            41: [4.5, 1.5, 0],
-            42: [5, 2, 0],
-            43: [5.5, 1, 0],
-            44: [4.5, 0.5, 0],
-            45: [5.5, 0, 0],
-            46: [4, -0.5, 0],
-            47: [4.5, -1.5, 0],
-            48: [4, -2, 0],
-            49: [3.5, -3, 0],
-            50: [4.5, -2.5, 0],
-            51: [6, -1.5, 0],
-            52: [6, -2.5, 0]
-        }
-
-        for e in edges:
-            if rand.choices([0,1], [0.75, 0.25], k = 1)[0]:
-                neg_edges.append(e)
-            else:
-                pos_edges.append(e)
-
-        graph = Graph(vertices, pos_edges+neg_edges, edge_config=generate_edge_config(neg_edges), layout=layout)
-
+        graph = Graph(vertices, edges, edge_config=generate_edge_config(neg_edges), layout=layout)
 
         self.play(Create(graph))
         self.wait(5)
