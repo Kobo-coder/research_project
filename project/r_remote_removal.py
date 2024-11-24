@@ -1,6 +1,11 @@
 from manim import *
 from collections import defaultdict
 import random as rand
+import math
+
+from networkx.classes import edges
+
+
 class r_remote_removal(Scene):
 
     # def generate_vertex_layout(self,vertices, boundaries, min_distance=0.5):
@@ -128,7 +133,98 @@ class r_remote_removal(Scene):
         return vertices,edges,U,negative_edges,vertex_layout,edge_weights
 
 
-    
+    def construct_h(self, g: DiGraph, neg_edges):
+
+        neg_edges.add((2,3))
+        neg_edges.add((2,4))
+        neg_edges.add((2,5))
+
+
+        k_hat = len(neg_edges)
+        r = math.floor(pow(k_hat,1/9))
+        R = [6]
+
+        h_vertices = []
+
+        for v in g.vertices:
+            if v in R:
+                    for i in range(r+1):
+                        h_vertices.append(f"{v}_{i}")
+            else:
+                h_vertices.append(f"{v}_0")
+
+        h_edges = []
+
+        #Rule 1
+        for (u,v) in g.edges.keys():
+            if u in R and v in R and (u,v) not in neg_edges:
+                for i in range(r+1):
+                    h_edges.append((str(u) + "_" + str(i), str(v) + "_" + str(i)))
+
+        # Rule 2
+        for (u,v) in neg_edges:
+            if u in R and v in R:
+                for i in range(r):
+                    h_edges.append((str(u)+"_"+str(i), str(v)+ "_"+str(i+1)))
+
+        # Rule 3
+        for (u,v) in g.edges.keys():
+            if u in R and v not in R:
+                for i in range(r+1):
+                    h_edges.append((str(u)+"_" + str(i), str(v) + "_0"))
+
+        # Rule 4
+        for (u,v) in neg_edges:
+            if u in R and v not in R:
+                for i in range(r+1):
+                    h_edges.append((str(u)+"_" + str(i), str(v) + "_0"))
+
+        # Rule 5
+        for (u,v) in g.edges.keys():
+            if (u,v) not in neg_edges and u not in R and v in R:
+                h_edges.append((str(u)+"_0", str(v)+"_0"))
+
+        # Rule 6
+        for (u,v) in neg_edges:
+            if u not in R and v in R:
+                h_edges.append((str(u)+"_0", str(v)+"_1"))
+
+        # Rule 7
+        for (u,v) in g.edges.keys():
+            if u not in neg_edges and v not in neg_edges and u not in R and v not in R:
+                h_edges.append((str(u)+"_0", str(v)+"_0"))
+
+        # Rule 8
+        for (u,v) in neg_edges:
+            if u not in R and v not in R:
+                h_edges.append((str(u)+"_0", str(v)+"_0"))
+
+        # Rule 9
+        for u in R:
+            for i in range(r):
+                h_edges.append((str(u)+"_"+str(i), str(u)+"_"+ str(i+1)))
+            h_edges.append((str(u)+"_" + str(r), str(u)+"_0"))
+
+
+        h_layout = {
+            "1_0": [-5, 0, 0],
+            "2_0": [-3, 0, 0],
+            "3_0": [-1, 1, 0],
+            "4_0": [-1, 0, 0],
+            "5_0": [-1, -1, 0],
+            "6_0": [1, 1, 0],
+            "6_1": [1,-1,0],
+            "7_0": [3, 0, 0],
+            "8_0": [4, 0, 0],
+            "9_0": [5, 1, 0],
+            "10_0": [5, -1, 0]
+        }
+
+        h = DiGraph(h_vertices, h_edges, layout=h_layout)
+        self.play(Create(h))
+        self.wait()
+
+
     def construct(self):
         title = Tex("r-Remote Edge Elimination by Hop Reduction")
         title.scale(1)
@@ -182,8 +278,6 @@ class r_remote_removal(Scene):
 
         weight_labels = []
 
-
-
         for (u,v) in edges:
             u_pos = g.vertices[u].get_center()
             v_pos = g.vertices[v].get_center()
@@ -227,7 +321,7 @@ class r_remote_removal(Scene):
         )
         print(U_indicator.height)
         U_indicator.move_to([(max_x+min_x)/2,(max_y+min_y)/2,0])
-        U_indicator_label = Text("(x,U,y)",font_size=48,color=BLUE)
+        U_indicator_label = MathTex("(x, U, y)",font_size=48,color=BLUE)
         U_indicator_label.move_to([(max_x+min_x)/2,(max_y - min_y),0])
 
         self.play(
@@ -300,7 +394,32 @@ class r_remote_removal(Scene):
         )
 
 
-        new_text_idk = MathTex(
-           # r"{\text{The set of edges}},
+        input_description_1 = MathTex(
+           r"{\text{As a product of previous steps of the algorithm,}",
+           r"{\text{the negative vertices in }U\text{ are made } r\text{-remote.}",
+            r"\text{Notationally this is written:}}",
+            r"{\left| R^{r}_{\phi_1 + \phi_2}(U)\right| > n/r}",
         )
-        
+
+        input_description_2 = MathTex(
+            r"{\text{We will use the hop-reduction technique on the graph}",
+            r"{G^{out(U)}_{\phi_1 + \phi_2} \text{ to eliminate }out(U)\text{.}}",
+            r"{\text{A price function }\phi \text{ is computed by this step.}}"
+        )
+
+        input_description_1.arrange(DOWN, aligned_edge=ORIGIN, buff=0.3)
+        input_description_1.move_to(ORIGIN)
+        input_description_2.arrange(DOWN, aligned_edge=ORIGIN, buff=0.3)
+        input_description_2.move_to(ORIGIN)
+
+
+        self.play(Write(input_description_1))
+        self.wait(3)
+        self.play(Unwrite(input_description_1))
+        self.wait(1)
+        self.play(Write(input_description_2))
+        self.wait(3)
+        self.play(Unwrite(input_description_2))
+
+
+        self.construct_h(g, negative_edges)
