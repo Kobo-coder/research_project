@@ -1,106 +1,87 @@
 from manim import *
-from collections import defaultdict
-import random as rand
 import math
-
-from networkx.classes import edges
+from collections import defaultdict
+from queue import PriorityQueue
 
 
 class r_remote_removal(Scene):
 
-    # def generate_vertex_layout(self,vertices, boundaries, min_distance=0.5):
-    #     x_bound, y_bound = boundaries
+    def supersource_BFD(self,vertices,positive_edges,negative_edges,weights,h):
+        graph = defaultdict(list[str])
+        q = "supersource"
+        for vertex in vertices:
+            for v,u in positive_edges:
+                if v == vertex:
+                    graph[v].append(u)
+            for v,u in negative_edges:
+                if v == vertex:
+                    graph[v].append(u)
+        for v in vertices:
+            graph[q].append(v)
+            positive_edges.append((q,v))
+            weights[(q,v)] = 0
 
-    #     layout = {}
+        dist = defaultdict(int)
+        for v in vertices:
+            dist[v] = math.inf
+        dist[q] = 0
 
-    #     x = np.linspace(x_bound, -x_bound, 10)
-    #     y = np.linspace(y_bound, -y_bound, 5)
 
-    #     xs, ys = np.meshgrid(x, y)
-    #     points = [(x, y) for x, y in zip(xs.flatten(), ys.flatten())]
+        def dijkstra():
+            pq = PriorityQueue()
+            for v in vertices:
+                pq.put((dist[v],v))
 
-    #     for v in vertices:
-    #         x,y = points[v-1]
-    #         placed = False
-    #         attempts = 0
+            while not pq.empty():
+                current_dist,u = pq.get()
+                if current_dist > dist[u]:
+                    continue
+                for v in graph[u]:
+                    if (u,v) in negative_edges:
+                        continue
+                    alt_dist = dist[u]+weights[(u,v)]
+                    if alt_dist < dist[v]:
+                        dist[v] = alt_dist
+                        pq.put((alt_dist,v))
 
-    #         while not placed and attempts < 1000:
-    #             x += rand.uniform(-0.3, 0.3)
-    #             y += rand.uniform(-0.3, 0.3)
+        def bellman_ford_round():
+            for u in vertices:
+                for v in graph[u]:
+                    if (u,v) not in negative_edges:
+                        continue
+                    alt_dist = dist[u] + weights[(u,v)]
+                    if alt_dist < dist[v]:
+                        dist[v] = alt_dist
+                
+        for i in range(h+1):
+            dijkstra()
+            if not h == i:
+                bellman_ford_round()
+            for key,value in dist.items():
+                print(f"{key} : {value}")
 
-    #             if self.is_position_valid(x, y, [pos for pos in layout.values()], min_distance):
-    #                 layout[v] = [x, y, 0]
-    #                 placed = True
+        h_distances = dist.copy()
 
-    #             attempts += 1
+        ##### CYCLE CHECK #####
+        bellman_ford_round()
+        dijkstra()
+        del h_distances[q]
+        del dist[q]
+        h1= [value for value in h_distances.values()]
+        h2= [value for value in dist.values()]
+        for i in range(len(h1)):
+            if h2[i]<h1[i]:
+                raise ValueError("NEGATIVE CYCLE DETECTED!")
+        #######################
 
-    #             if attempts % 100 == 0:
-    #                 min_distance *= 0.95
 
-    #     return layout
-    
-    # def is_position_valid(self,x, y, existing_positions, min_dist):
-    #     for pos in existing_positions:
-    #         if np.sqrt((pos[0] - x) ** 2 + (pos[1] - y) ** 2) < min_dist:
-    #             return False
-    #     return True
-    
-    # def create_graph(self,n,m):
-    #     vertices = [i for i in range(n)]
-    #     edges = []
-    #     negative_vertices = set()
-    #     negative_edges = set()
-    #     max_degree = 4*(m/n)
-    #     edge_count = 0
-    #     degrees = defaultdict(int)
-    #     weights = defaultdict(lambda: 0.0)
-    #     u = 0; v = 0
-
-    #     while edge_count < m:
-    #         # may seem weird at first but we always try to make new edges otherwise we can get stuck in infinite loop
-    #         # in case of negative
-    #         u = rand.randint(0,n-1)
-    #         v = rand.randint(0,n-1)
-        
-    #         #diabolical double while-loop - but we want to avoid self-loops
-    #         while (u == v or edges.count((u,v))):
-    #             u = rand.randint(0,n-1)
-    #             v = rand.randint(0,n-1)
-
-    #         negative = True if rand.random() < 0.3 else False
-
-    #         if negative:
-    #             if u in negative_vertices or degrees.get(u):
-    #                 # skip because a negative vertex may only have one outgoing edge.
-    #                 continue
-    #             # add to negative vertex set and negative edges set
-    #             negative_vertices.add(u)
-    #             negative_edges.add((u,v))
-    #             # increase degree of both vertices
-    #             degrees[u] = degrees[u] + 1
-    #             degrees[v] = degrees[v] + 1
-
-    #         # check degree of vertices
-    #         if (degrees[u] >= max_degree or degrees[v] >= max_degree):
-    #             #skip because one may not have any more edges
-    #             continue
-            
-    #         # randly choose a negative or positive weight depending on sign. 
-    #         # We use a larger range for negative weights to increase the reach of vertices
-    #         # TODO: Check if range must be decrease for negative weights if r-reach is too large
-    #         weights[(u,v)] = rand.uniform(0,50.0) if not negative else rand.uniform(-100,-1)
-            
-    #         edges.append((u,v))
-    #         edge_count += 1
-
-    #     # TODO: Consider what is worth returning.
-    #     return vertices,edges,weights,negative_vertices,negative_edges
-    
     def create_r_removal_example(self):
-        vertices = [i for i in range(1,11)]
-        edges = [(1,2),(2,3),(2,4),(2,5),(3,6),(4,6),(5,6),(6,7),(7,8),(8,10),(8,9),(10,9)]
+        vertices = [i for i in range(1,10)]
+        edges = [(1,2),(2,3),(2,4),(2,5),(3,6),(4,6),(5,6),(6,7),(7,9),(7,8),(8,9)]
         U = {3,4,5}
-        negative_edges = {(3,6),(4,6),(5,6)}
+        negative_edges = {(3,6),(4,6),(5,6),(2,3),(2,4),(2,5)}
+        out_U = {(3,6),(4,6),(5,6)}
+        positive_edges = [e for e in edges if e not in out_U and e not in negative_edges]
 
         vertex_layout = {
             1: [-5,0,0],
@@ -110,9 +91,8 @@ class r_remote_removal(Scene):
             5: [-1,-1,0],
             6: [1,0,0],
             7: [3,0,0],
-            8: [4,0,0],
+            8: [5,0,0],
             9: [5,1,0],
-            10:[5,-1,0]
         }
 
         edge_weights = {
@@ -123,21 +103,15 @@ class r_remote_removal(Scene):
             (3,6): -6,
             (4,6): -8,
             (5,6): -4,
-            (6,7): 2,
-            (7,8): 20,
-            (8,9): 3,
-            (8,10): 5,
-            (10,9): 1
+            (6,7): 12,
+            (7,8): 3,
+            (7,9): 5,
+            (8,9): 1
         }
 
-        return vertices,edges,U,negative_edges,vertex_layout,edge_weights
+        return vertices,edges,U,out_U,vertex_layout,edge_weights,positive_edges
 
-
-    def construct_h(self, g: DiGraph, neg_edges):
-
-        neg_edges.add((2,3))
-        neg_edges.add((2,4))
-        neg_edges.add((2,5))
+    def construct_h(self, g: DiGraph, neg_edges,positive_edges):
 
 
         k_hat = len(neg_edges)
@@ -156,8 +130,8 @@ class r_remote_removal(Scene):
         h_edges = []
 
         #Rule 1
-        for (u,v) in g.edges.keys():
-            if u in R and v in R and (u,v) not in neg_edges:
+        for (u,v) in positive_edges:
+            if u in R and v in R:
                 for i in range(r+1):
                     h_edges.append((str(u) + "_" + str(i), str(v) + "_" + str(i)))
 
@@ -168,7 +142,7 @@ class r_remote_removal(Scene):
                     h_edges.append((str(u)+"_"+str(i), str(v)+ "_"+str(i+1)))
 
         # Rule 3
-        for (u,v) in g.edges.keys():
+        for (u,v) in positive_edges:
             if u in R and v not in R:
                 for i in range(r+1):
                     h_edges.append((str(u)+"_" + str(i), str(v) + "_0"))
@@ -176,12 +150,12 @@ class r_remote_removal(Scene):
         # Rule 4
         for (u,v) in neg_edges:
             if u in R and v not in R:
-                for i in range(r+1):
+                for i in range(r):
                     h_edges.append((str(u)+"_" + str(i), str(v) + "_0"))
 
         # Rule 5
-        for (u,v) in g.edges.keys():
-            if (u,v) not in neg_edges and u not in R and v in R:
+        for (u,v) in positive_edges:
+            if u not in R and v in R:
                 h_edges.append((str(u)+"_0", str(v)+"_0"))
 
         # Rule 6
@@ -190,8 +164,8 @@ class r_remote_removal(Scene):
                 h_edges.append((str(u)+"_0", str(v)+"_1"))
 
         # Rule 7
-        for (u,v) in g.edges.keys():
-            if u not in neg_edges and v not in neg_edges and u not in R and v not in R:
+        for (u,v) in positive_edges:
+            if u not in R and v not in R:
                 h_edges.append((str(u)+"_0", str(v)+"_0"))
 
         # Rule 8
@@ -212,8 +186,8 @@ class r_remote_removal(Scene):
             "3_0": [-1, 1, 0],
             "4_0": [-1, 0, 0],
             "5_0": [-1, -1, 0],
-            "6_0": [1, 1, 0],
-            "6_1": [1,-1,0],
+            "6_0": [1, 0, 0],
+            "6_1": [1,1,0],
             "7_0": [3, 0, 0],
             "8_0": [4, 0, 0],
             "9_0": [5, 1, 0],
@@ -222,7 +196,10 @@ class r_remote_removal(Scene):
 
         h = DiGraph(h_vertices, h_edges, layout=h_layout)
         self.play(Create(h))
-        self.wait()
+        # TODO: Think of way to make layers visible
+
+        self.wait(5)
+
 
 
     def construct(self):
@@ -247,13 +224,9 @@ class r_remote_removal(Scene):
         )
 
 
-        vertices,edges,U,negative_edges,vertex_layout,edge_weights = self.create_r_removal_example()
+        vertices,edges,U,negative_edges,vertex_layout,edge_weights,positive_edges = self.create_r_removal_example()
 
-        radius = 0.1
         edge_config = {
-            # 'buff': radius/2,
-            # 'max_tip_length_to_length_ratio': 0.15,
-            # 'stroke_width': 3.5
             "tip_config": {"tip_length": 0.2, "tip_width": 0.2},
             (3, 6): {"stroke_color": RED},
             (4, 6): {"stroke_color": RED},
@@ -295,9 +268,9 @@ class r_remote_removal(Scene):
                 weight.move_to(mid)
             weight_labels.append(weight)
         
-        # for label in weight_labels:
-        #     self.play(Write(label,run_time=0.5))
-        # self.wait(2)
+        for label in weight_labels:
+            self.play(Write(label,run_time=0.5))
+        self.wait(2)
 
 
         # NOTE: The graph we create here tries to show the 1-hop relationship graph. Maybe not correct at this very moment
@@ -422,4 +395,4 @@ class r_remote_removal(Scene):
         self.play(Unwrite(input_description_2))
 
 
-        self.construct_h(g, negative_edges)
+        self.construct_h(g, negative_edges,positive_edges)
