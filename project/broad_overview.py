@@ -4,8 +4,6 @@ from manim import *
 import random as rand
 from math import pow, log2, floor
 
-from manim.utils.color.X11 import HOTPINK
-
 
 def generate_edge_config(neg_edges):
     edge_config = {}
@@ -30,10 +28,14 @@ def generate_vertex_layout(vertices, boundaries, min_distance=0.5):
     xs, ys = np.meshgrid(x, y)
     points = [(x, y) for x, y in zip(xs.flatten(), ys.flatten())]
 
+    org_min_dist = min_distance
+
     for v in vertices:
         x,y = points[v-1]
         placed = False
         attempts = 0
+
+        min_distance = org_min_dist
 
         while not placed and attempts < 1000:
             x += rand.uniform(-0.3, 0.3)
@@ -46,7 +48,7 @@ def generate_vertex_layout(vertices, boundaries, min_distance=0.5):
             attempts += 1
 
             if attempts % 100 == 0:
-                min_distance *= 0.95
+                min_distance += 0.5
 
     return layout
 
