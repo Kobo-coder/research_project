@@ -4,8 +4,7 @@ from manim import *
 import random as rand
 import math
 
-from broad_overview import is_position_valid, distance, determine_num_of_edges, generate_vertex_layout, \
-    generate_edge_config, find_most_mid_vertex
+from broad_overview import is_position_valid, distance, determine_num_of_edges, generate_edge_config
 
 
 # Redundant code
@@ -61,20 +60,25 @@ def generate_edges(layout, bounds, min_edges, max_edges, max_edge_length=4.0):
     for v in vertices:
         distances = [(u, distance(v, u, layout)) for u in vertices if u != v]
         distances.sort(key=lambda x: x[1])
-        
-        num_edges = determine_num_of_edges(v, layout, bounds, min_edges, max_edges)
 
-        for u, dist in distances:
-            if dist <= max_edge_length:
-                if len([(e1, e2) for e1, e2 in edges if (e1 == v and e2 == u) or (e1 == u and e2 == v)]) == 0:
-                    edge = (u, v) if layout[u][0] < layout[v][0] else (v, u)
-                    edges.append(edge)
+        isNeg = rand.choices([0, 1], [0.8, 0.2], k=1)[0]
 
-                    if rand.choices([0, 1], [0.75, 0.25], k=1)[0]:
-                        neg_edges.append(edge)
+        if not isNeg:
+            num_edges = determine_num_of_edges(v, layout, bounds, min_edges, max_edges)
+            for u, dist in distances:
+                if dist <= max_edge_length:
+                    if len([(e1, e2) for e1, e2 in edges if (e1 == v and e2 == u) or (e1 == u and e2 == v)]) == 0:
+                        edge = (u, v) if layout[u][0] < layout[v][0] else (v, u)
+                        edges.append(edge)
 
-                    if len([e for e in edges if v in e]) >= num_edges:
-                        break
+                        if len([e for e in edges if v in e]) >= num_edges:
+                            break
+        else:
+            segment = [u[0] for u in distances[:8]]
+            u = rand.choices(segment)[0]
+            edges.append((v,u))
+            neg_edges.append((v,u))
+
     return edges, neg_edges
 
 
@@ -82,19 +86,24 @@ def select_subset(vertices, tau, c):
     size_of_subset = c * tau * math.ceil(math.log(len(vertices)))
     return rand.sample(vertices, size_of_subset)
 
-def compute_weights(edges, neg_edges, layout):
+def compute_weights(edges, neg_edges):
     weights = {}
+    possible_pos_weights = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    possible_neg_weights = [-1, -2, -3, -4, -5]
+
     for (u,v) in edges:
-        length = int(distance(u,v,layout))
-        if (u,v) in neg_edges:
-            length = -1*length
+        if (u,v) not in neg_edges:
+            length = rand.sample(possible_pos_weights, 1)[0]
+        else:
+            length = rand.sample(possible_neg_weights, 1)[0]
         weights[(u,v)] = length
+
     return weights
 
 
 def compute_SSSP(source, beta, graph, weights_dict, neg_edges):
 
-    def dijkstra(source, graph: DiGraph, weights_dict, neg_edges, dist):
+    def dijkstra():
         pq = PriorityQueue()
         for (v, d) in dist.items():
             pq.put((d, v))
@@ -118,7 +127,7 @@ def compute_SSSP(source, beta, graph, weights_dict, neg_edges):
                     dist[edge[1]] = dist[u] + weight
                     pq.put((dist[edge[1]], edge[1]))
 
-    def bellman_ford(neg_edges, weights_dict, dist):
+    def bellman_ford():
         for (u,v) in neg_edges:
             if dist[v] > dist[u] + weights_dict[(u,v)]:
                 dist[v] = dist[u] + weights_dict[(u,v)]
@@ -129,9 +138,9 @@ def compute_SSSP(source, beta, graph, weights_dict, neg_edges):
     dist[source] = 0
 
     for rounds in range(beta):
-        dijkstra(source, graph, weights_dict, neg_edges, dist)
-        bellman_ford(neg_edges, weights_dict, dist)
-    dijkstra(source, graph, weights_dict, neg_edges, dist)
+        dijkstra()
+        bellman_ford()
+    dijkstra()
 
     return dist
 
@@ -151,6 +160,14 @@ def transpose_data(g: DiGraph, weights_dict, neg_edges):
 
     return transposed_g, transposed_weights_dict, transposed_neg_edges
 
+def construct_h_edges(vertices, t_set):
+    edges = []
+    for v in vertices:
+        for t in t_set:
+            edges.append((v, t))
+            edges.append((t, v))
+
+    return edges
 
 class BetweennessReduction(Scene):
     def construct(self):
@@ -160,32 +177,41 @@ class BetweennessReduction(Scene):
         bounds = (5, 2.5)
         layout = generate_layout(vertices, bounds)
 
-        edges, neg_edges = generate_edges(layout, bounds, 2, 8)
+        edges, neg_edges = generate_edges(layout, bounds, 2, 7)
 
-        weights_dict = compute_weights(edges, neg_edges, layout)
+        weights_dict = compute_weights(edges, neg_edges)
 
         edge_config = generate_edge_config(neg_edges)
         edge_config["tip_config"] = {"tip_length": 0.2, "tip_width": 0.2}
 
-        g = DiGraph(vertices, edges, layout = layout, edge_config=edge_config, labels=True)
+        g = DiGraph(vertices, edges, layout = layout, edge_config=edge_config)#, labels=True)
 
         self.play(Create(g))
         self.wait()
 
-        ##https://www.geeksforgeeks.org/randomly-select-n-elements-from-list-in-python/
-        subset = select_subset(vertices, 2, 2)
+        # https://www.geeksforgeeks.org/randomly-select-n-elements-from-list-in-python/
+        T = select_subset(vertices, 2, 2)
 
-        self.play([FadeToColor(g.vertices[v], BLUE) for v in subset])
+        self.play([FadeToColor(g.vertices[v], BLUE) for v in T])
         self.wait()
 
         beta = 1
         SSSPs = {}
         STSPs = {}
 
-        for v in subset:
+        for v in T:
             SSSPs[v] = compute_SSSP(v, beta, g, weights_dict, neg_edges)
             transposed_graph, transposed_weights_dict, transposed_neg_edges = transpose_data(g, weights_dict, neg_edges)
             STSPs[v] = compute_SSSP(v, beta, transposed_graph, transposed_weights_dict, transposed_neg_edges)
 
-        print(SSSPs)
-        print(STSPs)
+        #print(SSSPs)
+        #print(STSPs)
+
+        self.play(Uncreate(g))
+        self.wait()
+
+        h_edges = construct_h_edges(vertices, T)
+        h = DiGraph(vertices, h_edges, layout = layout, edge_config={"tip_config": {"tip_length": 0.2, "tip_width": 0.2}})
+
+        self.play(Create(h))
+        self.wait(2)
