@@ -116,28 +116,6 @@ class r_remote_removal(Scene):
             (7,8): -8,
         }
 
-        ############# TEST ###################
-        # vertices_2 = [i for i in range(1,10)]
-        # edges_2 = [(1,2),(3,6),(4,6),(5,6),(6,7),(7,9),(7,8),(8,9)]
-        # negative_edges_2 = {(3,6),(4,6),(5,6)}
-        # positive_edges_2 = [e for e in edges_2 if e not in negative_edges]
-
-
-        # edge_weights_2 = {
-        #     (1,2): 2,
-        #     (3,6): -5,
-        #     (4,6): -3,
-        #     (5,6): -2,
-        #     (6,7): 10,
-        #     (7,8): 4,
-        #     (7,9): 3,
-        #     (8,9): 3
-        # }
-
-        # self.supersource_BFD(vertices_2,positive_edges_2,negative_edges_2,edge_weights_2,1)
-
-        #######################################
-
         return vertices,edges,U,out_U,vertex_layout,edge_weights,positive_edges,negative_edges
 
     def construct_h(self, g: DiGraph, neg_edges,positive_edges):
@@ -230,7 +208,6 @@ class r_remote_removal(Scene):
         }
 
         vertex_config = {
-            # "radius":radius
             "5_1": {"fill_color": BLUE},
             "6_1": {"fill_color": BLUE},
             "7_1": {"fill_color": BLUE},
@@ -248,8 +225,6 @@ class r_remote_removal(Scene):
             end=title.get_right(), 
         ).next_to(title, DOWN, buff=0.1)
 
-        # The run_time speed parameter alter the speed at which the title is written.
-        # We use it to sync the creation of the title underline.
         self.play(
             Write(title,run_time=2), 
             Create(h_line,run_time=2),
@@ -269,16 +244,10 @@ class r_remote_removal(Scene):
             (1, 2): {"stroke_color": RED},
             (3, 6): {"stroke_color": RED},
             (4, 5): {"stroke_color": RED},
-            #(5, 6): {"stroke_color": RED},
             (7,8): {"stroke_color": RED},
-            # (2, 3): {"stroke_color": RED},
-            # (2, 4): {"stroke_color": RED},
-            # (2, 5): {"stroke_color": RED},
             }
         vertex_config = {
-            # "radius":radius
             1: {"fill_color": RED},
-            # 2: {"fill_color": RED},
             3: {"fill_color": RED},
             4: {"fill_color": RED},
             7: {"fill_color": RED},
@@ -317,13 +286,6 @@ class r_remote_removal(Scene):
         )
         self.wait(2)
 
-
-        # NOTE: The graph we create here tries to show the 1-hop relationship graph. Maybe not correct at this very moment
-        # but it still shows in general how we find this negative sandwich of negative 1-hop paths between negative vertices.
-        # In the paper this is omitted or at least not explained as he does in his video. His video explains this negative sandwich
-        # and how it is found more intuitively.
-
-
         # Find bounds of vertices in U + x + y
         xs = [vertex_layout[v][0] for v in U] + [vertex_layout[2][0],vertex_layout[7][0],vertex_layout[1][0]]
         ys = [vertex_layout[v][1] for v in U] + [vertex_layout[2][1],vertex_layout[7][1]]
@@ -348,8 +310,6 @@ class r_remote_removal(Scene):
         )
 
         self.wait(2)
-
-        #### SETUP SMALLER RECTANGLE FOR U
 
         xs = [vertex_layout[v][0] for v in U] 
         ys = [vertex_layout[v][1] for v in U]
@@ -390,10 +350,6 @@ class r_remote_removal(Scene):
         y_indicator_label = MathTex("y",font_size=48,color=BLUE)
         y_indicator_label.move_to([vertex_layout[7][0],vertex_layout[7][1]-1,0])
         
-
-
-
-        # #### REMOVE Sandwich RECTANGLE by Transforming to new
         self.play(
             ReplacementTransform(U_indicator,U_indicator_2),
             ReplacementTransform(U_indicator_label,U_indicator_label_2),
@@ -404,9 +360,6 @@ class r_remote_removal(Scene):
         )
 
         self.wait(2)
-
-
-        # ### MOVE U TO THE SIDE TO INDICATE WE MAKE NEW GRAPH G after it has been transformed.
         
         self.play(
             Uncreate(U_indicator_2),
@@ -422,57 +375,10 @@ class r_remote_removal(Scene):
         g_c = g.copy()
         w_c = weight_labels.copy()
 
-        # self.play(
-        #     FadeOut(g),
-        #     *[FadeOut(label,run_time=0.5) for label in weight_labels]
-        # )
-        # self.wait(1)
-        
-        # TODO: remember to swap this for own text. This is directly copied from finemans paper.
-        # gn_definition = MathTex(
-        #     r"{\text{For a subset }}N \subseteq E^- \text{ of negative edges on the input graph,}",
-        #     r"\text{ we use }G^N \text{ to denote the subgraph: }",
-        #     r"G^N = (V, E^+ \cup N, w).",
-        #     r"\text{ Moreover, }G^N_\phi \text{ denotes the reweighted subgraph: }",
-        #     r"G^N_\phi = (V, E^+ \cup N, w_\phi)."
-        # )
-
-        # gn_definition.arrange(DOWN, aligned_edge=ORIGIN, buff=0.3)
-        # gn_definition.move_to(ORIGIN)
-        
-        # self.play(
-        #     Write(gn_definition,run_time = 5)
-        #     )
-        
-        # self.wait(2)
-
-        # self.play(
-        #     Unwrite(gn_definition)
-        # )
-
-
-        # gn_definition = MathTex(
-        #     r"{\text{Let }out(U)\text{ denote the set of outgoing edges from U}",
-        #     r"\text{The input for \textit{r}-remote hop-reduction is:}",
-        #     r"G^{out(U)}_{\phi_1 + \phi_2}",
-        # )
-        # gn_definition.arrange(DOWN, aligned_edge=ORIGIN, buff=0.3)
-        # gn_definition.move_to(ORIGIN)
-        # self.play(
-        #     Write(gn_definition,run_time = 3)
-        # )
-        # self.wait(2)
-        # self.play(
-        #     Unwrite(gn_definition)
-        # )
         g_c = copy.deepcopy(g)
         w_c = copy.deepcopy(weight_labels)
 
         
-        # self.play(
-        #     FadeIn(g),
-        #     *[FadeIn(label,run_time=0.5) for label in weight_labels]
-        # )
         gu = MathTex("G^{out(U)}_{\phi_1 + \phi_2}")
         gu.next_to(g.vertices[1],UP,buff=1)
         to_remove = [v for k,v in g.edges.items() if k in negative_edges and k not in out_U]
@@ -486,48 +392,6 @@ class r_remote_removal(Scene):
         self.play(Write(gu))
         self.wait(3)
         self.play(Uncreate(g),*[Unwrite(label) for label in weight_labels],Unwrite(gu))
-
-        # input_description_1 = MathTex(
-        #    r"{\text{As a product of previous steps of the algorithm,}",
-        #    r"{\text{the negative vertices in }U\text{ are } r\text{-remote.}",
-        #     r"\text{Notationally this is written:}}",
-        #     r"{\left| R^{r}_{\phi_1 + \phi_2}(U)\right| > n/r}",
-        # )
-
-        # input_description_2 = MathTex(
-        #     r"{\text{We will use the hop-reduction technique on the graph}",
-        #     r"{G^{out(U)}_{\phi_1 + \phi_2} \text{ to eliminate }out(U)\text{.}}",
-        #     r"{\text{A price function }\phi \text{ is computed by this step.}}"
-        # )
-
-        # description_3 = MathTex(
-        #     r"{\text{We will use the hop-reduction technique on }G^{out(U)}_{\phi_1 + \phi_2}}",
-        #     r"{\text{by computing all super-source distance }\delta_j = dist^j_{G^{out(U)}_{\phi_1 + \phi_2}}(V,v)}",
-        #     r"\text{for all }v\text{ and }j, 0\leq j \leq r}\text{, and find } R:=\{v|\delta_r(v) < 0\}",
-        #     r"\text{to construct our graph }H=(V_H,E_H,w_h)\text{ using }\delta_j(v)\text{ and }R"
-        # )
-
-        # input_description_1.arrange(DOWN, aligned_edge=ORIGIN, buff=0.3)
-        # input_description_1.move_to(ORIGIN)
-        # input_description_2.arrange(DOWN, aligned_edge=ORIGIN, buff=0.3)
-        # input_description_2.move_to(ORIGIN)
-        # description_3.arrange(DOWN, aligned_edge=ORIGIN, buff=0.3)
-        # description_3.move_to(ORIGIN)
-
-
-        # self.play(Write(input_description_1))
-        # self.wait(3)
-        # self.play(Unwrite(input_description_1))
-        # self.wait(1)
-        # self.play(Write(input_description_2))
-        # self.wait(3)
-        # self.play(Unwrite(input_description_2))
-        # self.wait(1)
-        # self.play(Write(description_3))
-        # self.wait(3)
-        # self.play(Unwrite(description_3))
-        # self.wait(2)
-        
 
         distance_maps = self.supersource_BFD(vertices,positive_edges,out_U,edge_weights,1)
         for k,distances in distance_maps[1].items():
@@ -547,42 +411,42 @@ class r_remote_removal(Scene):
         
         ################################################################################
         custom_6_edge = CurvedArrow(
-            h.vertices["6_0"].get_center(),  # Start vertex
-            h.vertices["6_1"].get_boundary_point(RIGHT),  # End vertex
-            angle=1,  # Adjust angle to control curve
-            tip_length=0.2    # Optional buffer to prevent overlapping
+            h.vertices["6_0"].get_center(),
+            h.vertices["6_1"].get_boundary_point(RIGHT),
+            angle=1,
+            tip_length=0.2 
         ).set_z_index(0)
         custom_6_edge_2 = CurvedArrow(
-            h.vertices["6_1"].get_center(),  # Start vertex
-            h.vertices["6_0"].get_boundary_point(LEFT),  # End vertex
-            angle=1,  # Adjust angle to control curve
+            h.vertices["6_1"].get_center(),
+            h.vertices["6_0"].get_boundary_point(LEFT), 
+            angle=1,
             tip_length=0.2  
         ).set_z_index(0)
         ################################################################################
         custom_5_edge = CurvedArrow(
-            h.vertices["5_0"].get_center(),  # Start vertex
-            h.vertices["5_1"].get_boundary_point(RIGHT),  # End vertex
-            angle=1,  # Adjust angle to control curve
-            tip_length=0.2    # Optional buffer to prevent overlapping
+            h.vertices["5_0"].get_center(),
+            h.vertices["5_1"].get_boundary_point(RIGHT),
+            angle=1,
+            tip_length=0.2
         ).set_z_index(0)
         custom_5_edge_2 = CurvedArrow(
-            h.vertices["5_1"].get_center(),  # Start vertex
-            h.vertices["5_0"].get_boundary_point(LEFT),  # End vertex
-            angle=1,  # Adjust angle to control curve
+            h.vertices["5_1"].get_center(),
+            h.vertices["5_0"].get_boundary_point(LEFT), 
+            angle=1, 
             tip_length=0.2  
         ).set_z_index(0)
         ################################################################################
         custom_7_edge = CurvedArrow(
-            h.vertices["7_0"].get_center(),  # Start vertex
-            h.vertices["7_1"].get_boundary_point(RIGHT),  # End vertex
-            angle=1,  # Adjust angle to control curve
+            h.vertices["7_0"].get_center(),
+            h.vertices["7_1"].get_boundary_point(RIGHT),
+            angle=1,
             tip_length=0.2
         ).set_z_index(0)
 
         custom_7_edge_2 = CurvedArrow(
-            h.vertices["7_1"].get_center(),  # Start vertex
-            h.vertices["7_0"].get_boundary_point(LEFT),  # End vertex
-            angle=1,  # Adjust angle to control curve
+            h.vertices["7_1"].get_center(), 
+            h.vertices["7_0"].get_boundary_point(LEFT),  
+            angle=1, 
             tip_length=0.2  ,
         ).set_z_index(0)
         edges_to_remove = [("6_1", "6_0"),("6_0", "6_1"),("5_1", "5_0"),("5_0", "5_1"),("7_1", "7_0"),("7_0", "7_1")]
@@ -599,7 +463,6 @@ class r_remote_removal(Scene):
             Create(custom_7_edge_2),
             Create(custom_7_edge)
         )
-        # TODO: Think of way to make layers visible
 
         self.wait(3)
 
@@ -661,36 +524,12 @@ class r_remote_removal(Scene):
             *[Unwrite(label,run_time=0.5) for label in weight_labels_h]
         )
 
-
-
-        # description_4 = MathTex(
-        #     r"{\text{On H, we compute super source distances}}",
-        #     r"{d(v)=dist^{k}_H(V,v) \text{ and }d'(v)=dist^{k+1}_H(V,v) \text{ for all } v\in V_H}",
-        #     r"{k=\lceil\hat{k}/r\rceil\text{, to check for cycles if }\exists v\in V_h\text{such that} d'(v) < d(v)}",
-        #     r"{\text{if there exists a cycle the algorithm terminates, otherwise}}",
-        #     r"{\text{we return price function }\phi : V \rightarrow \text{ with }\phi(v)=d(v)}"
-        # )
-
-        # description_4.arrange(DOWN, aligned_edge=ORIGIN, buff=0.3)
-        # description_4.move_to(ORIGIN)
-
-        # self.play(Write(description_4))
-        # self.wait(3)
-        # self.play(Unwrite(description_4))
-        # self.wait(1)
-
         # TODO: check if k is the right value
-        print("-------------------------------------------------")
-        print(h_weights)
-        print("-------------------------------------------------")
 
         h_neg_edges = [e for e in h_edges if h_weights[e] < 0]
         h_pos_edges = [e for e in h_edges if h_weights[e] >= 0]
-        print(h_pos_edges)
-        price_function = self.supersource_BFD(h_vertices,h_pos_edges,h_neg_edges,h_weights,3)
-        for v in price_function:
-            print(v)
 
+        price_function = self.supersource_BFD(h_vertices,h_pos_edges,h_neg_edges,h_weights,3)
 
         phi_k = [key for key in price_function[-1].keys()]
         phi_v = [value for value in price_function[-1].values()]
@@ -700,44 +539,15 @@ class r_remote_removal(Scene):
         include_outer_lines=True,
         ).scale(0.6).move_to(ORIGIN)
 
-        
-        # phi_array = VGroup()
-        # for i, (vertex, dist) in enumerate(phi):
-
-        #     square = Square(side_length=1, color=WHITE, fill_opacity=0)
-
-        #     number = Text(str(dist), font_size=24).move_to(square.get_center())
-
-        #     vertex_label = Text(vertex, font_size=24, color=BLUE)
-        #     vertex_label.next_to(square, UP)
-        
-        #     index = VGroup(vertex_label, square, number)
-            
-        #     index.move_to(RIGHT * i)
-            
-        #     phi_array.add(index)
-        
-        # phi_array.move_to(ORIGIN)
-        # phi_label = MathTex("\phi = ", font_size=60).next_to(phi_array[0][1], LEFT)
-
-        # TODO: check to see if we should remove 6_1 from the price function 
         self.play(
             Create(dist_table)
-            # Write(phi_label),
-            # Create(phi_array)
         )
         
         self.wait(2)
 
         self.play(
-            # Unwrite(phi_label),
-            # Uncreate(phi_array)
             Uncreate(dist_table)
         )
-
-
-
-        
 
         self.wait(2)
         print(w_c)
@@ -747,8 +557,6 @@ class r_remote_removal(Scene):
             *[Write(label) for label in w_c]
         )
         self.wait(2)
-
-        
 
         new_labels = []
         print(price_function[-1])
