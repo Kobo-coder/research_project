@@ -56,6 +56,7 @@ class SimplifyingAssumption1(Scene):
 
 
         # Add new vertex 7 and position it
+       
         new_vertex = 7
         g.add_vertices(new_vertex, positions={7: [0, 0, 0]},vertex_config={7: {"fill_color": RED}})
 
@@ -65,7 +66,8 @@ class SimplifyingAssumption1(Scene):
 
         g.remove_edges(*pos_edges)
         pos_edges = [(1, 7), (2, 7)]
-        g.add_edges(*new_edges)
+        g.add_edges(*new_edges,edge_type=Arrow,edge_config={'buff': 0.08,'max_tip_length_to_length_ratio': 0.1,'stroke_width': DEFAULT_STROKE_WIDTH})
+        # g.add_edges(*new_edges)
         
 
         self.play(
@@ -84,7 +86,7 @@ class SimplifyingAssumption1(Scene):
         w_star_copy = MathTex(r"w^*").set_color(RED).next_to(g.edges[(7,3)].get_midpoint()).shift(DOWN*0.4).shift(LEFT*0.4)
         self.play(
             FadeToColor(g.vertices[7], RED),
-            Create(g.add_edges(new_neg_edge, edge_config={(7, 3): {"stroke_color": RED}})),
+            Create(g.add_edges(new_neg_edge,edge_type=Arrow,edge_config={(7, 3): {"stroke_color": RED},'buff': 0.08,'max_tip_length_to_length_ratio': 0.1,'stroke_width': DEFAULT_STROKE_WIDTH})),
             TransformFromCopy(formula[0], w_star_copy),
         )
 
