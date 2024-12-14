@@ -1,4 +1,4 @@
-import copy
+from collections import defaultdict
 from queue import PriorityQueue
 from manim import *
 import random as rand
@@ -7,7 +7,6 @@ import math
 from broad_overview import is_position_valid, distance, determine_num_of_edges, generate_edge_config
 
 
-# Redundant code
 def generate_layout(vertices, bounds, min_distance=0.5):
     n = len(vertices)
 
@@ -239,9 +238,86 @@ def generate_new_layout():
     }
     return vertex_layout
 
+def supersource_BFD(vertices, positive_edges, negative_edges, weights, h):
+    graph = defaultdict(list[type(vertices[0])])
+    pos_edges = positive_edges.copy()
+    q = 6
+    for vertex in vertices:
+        for v, u in pos_edges:
+            if v == vertex:
+                graph[v].append(u)
+        for v, u in negative_edges:
+            if v == vertex:
+                graph[v].append(u)
+    for v in vertices:
+        graph[q].append(v)
+        pos_edges.append((q, v))
+        weights[(q, v)] = 0
+
+    dist = defaultdict(int)
+    for v in vertices:
+        dist[v] = math.inf
+    dist[q] = 0
+    print(graph)
+
+    def dijkstra():
+        pq = PriorityQueue()
+        for v in graph.keys():
+            pq.put((dist[v], v))
+        while not pq.empty():
+            current_dist, u = pq.get()
+            if current_dist > dist[u]:
+                continue
+            for v in graph[u]:
+                if (u, v) in negative_edges:
+                    continue
+                alt_dist = dist[u] + weights[(u, v)]
+                if alt_dist < dist[v]:
+                    dist[v] = alt_dist
+                    pq.put((alt_dist, v))
+
+    def bellman_ford_round():
+        for u in vertices:
+            for v in graph[u]:
+                if (u, v) not in negative_edges:
+                    continue
+                alt_dist = dist[u] + weights[(u, v)]
+                if alt_dist < dist[v]:
+                    dist[v] = alt_dist
+
+    all_distances = []
+
+    for i in range(h + 1):
+        dijkstra()
+        round_i_dist = dist.copy()
+        del round_i_dist[q]
+        all_distances.append(round_i_dist)
+        print(f"Dijkstra's pass {i + 1}")
+        for key, value in dist.items():
+            print(f"{key} : {value}")
+        if not h == i:
+            bellman_ford_round()
+            print(f"BF pass {i + 1}")
+            for key, value in dist.items():
+                print(f"{key} : {value}")
+
+    h_distances = dist.copy()
+
+    ##### CYCLE CHECK #####
+    bellman_ford_round()
+    dijkstra()
+    del h_distances[q]
+    del dist[q]
+    h1 = [value for value in h_distances.values()]
+    h2 = [value for value in dist.values()]
+    for i in range(len(h1)):
+        if h2[i] < h1[i]:
+            raise ValueError("NEGATIVE CYCLE DETECTED!")
+    #######################
+    return all_distances
+
 
 class BetweennessReduction(Scene):
-
     def apply_weights(self, graph, weights, anim = True, font_size = 24, mid_point = 0):
         weight_labels = []
 
@@ -359,10 +435,6 @@ class BetweennessReduction(Scene):
 
             while not pq.empty():
                 d, u = pq.get()
-                # if animated:
-                #     self.play(
-                #         FadeToColor(animation_graph.vertices[u], PURE_GREEN)
-                #     )
 
                 if u in visited or d > dist[u]:
                     continue
@@ -435,12 +507,14 @@ class BetweennessReduction(Scene):
             dist = {v: math.inf for v in graph.vertices}
             dist[source] = 0
 
-        text = Text("Running ", font_size=30).to_corner(LEFT + UP)
-        dijk = Text("Dijkstra", font_size=30).next_to(text, buff=0.2)
-        bell = Text("Bellman-Ford", font_size=30).next_to(text, buff=0.2)
+        header = Tex(r"Computing $\beta$-hop distances from vertex $0$, for $\beta = 1$", font_size=35).to_corner(LEFT + UP)
+        text = Text("Running ", font_size=22).align_to(header, LEFT + DOWN).shift(DOWN*0.5)
+        dijk = Text("Dijkstra", font_size=22).next_to(text, buff=0.2)
+        bell = Text("Bellman-Ford", font_size=22).next_to(text, buff=0.2)
 
         if animated:
-            self.play(Write(text),
+            self.play(Write(header),
+                      Write(text),
                       Write(dijk))
             dijkstra(animated, animation_graph)
         else:
@@ -453,7 +527,7 @@ class BetweennessReduction(Scene):
                 self.wait()
                 bellman_ford(animated, animation_graph)
 
-                dijk = Text("Dijkstra", font_size=30).next_to(text, buff=0.2)
+                dijk = Text("Dijkstra", font_size=22).next_to(text, buff=0.2)
                 self.play(ReplacementTransform(bell, dijk))
                 self.wait()
                 dijkstra(animated, animation_graph)
@@ -466,6 +540,7 @@ class BetweennessReduction(Scene):
             self.play(
                 FadeOut(text),
                 FadeOut(dijk),
+                FadeOut(header)
             )
             self.wait(4)
             if dist_table is not None:
@@ -645,8 +720,12 @@ class BetweennessReduction(Scene):
         self.wait()
 
         T = [0, 5]
-        #self.play([FadeToColor(small_g.vertices[v], BLUE) for v in T])
-        #self.wait(2)
+        t_text = Text("T = {0, 5}", font_size=25).move_to(small_g.vertices[2].get_center()).shift(UP*2.1).shift(LEFT*0.8)
+        self.play(
+            *[Indicate(small_g.vertices[v], run_time=2) for v in T],
+            Write(t_text)
+        )
+        self.wait(2)
 
 
         beta = 1
@@ -675,7 +754,8 @@ class BetweennessReduction(Scene):
 
         self.play(ReplacementTransform(small_g, small_g_target),
                     ReplacementTransform(custom_edge, custom_edge_target),
-                  *[ReplacementTransform(weight_labels[i], smaller_weights_copy[i].shift(DOWN*0.12)) for i in range(len(weight_labels))]
+                  *[ReplacementTransform(weight_labels[i], smaller_weights_copy[i].shift(DOWN*0.12)) for i in range(len(weight_labels))],
+                    FadeOut(t_text)
                     )
 
         self.wait()
@@ -684,10 +764,21 @@ class BetweennessReduction(Scene):
 
         ####### CONSTRUCTION OF H ########
 
+        # explanatory_text1 = Tex(r"$\forall v \in T$, we compute the $\beta$-hop SSSP and STSP to and from $v$")
+        # explanatory_text2 = Tex("This is done by running BFD")
+        explanatory_text3 = Tex(r"Based on the computed $\beta$-hop distances,\\ we construct an auxiliary graph $H$").set_z_index(11)
+
+
+        self.add(explanatory_text3)
+        self.wait(5)
+        self.remove(explanatory_text3)
+        self.wait()
+
+
         h_edges = construct_h_edges(vertices, T)
         h_edges_removed_dups = list(set(h_edges))
         new_layout = generate_new_layout()
-        h = DiGraph(vertices, h_edges_removed_dups, layout = new_layout, vertex_config= {"fill_color": PURE_BLUE}, edge_config={"tip_config": {"tip_length": 0.2, "tip_width": 0.2}}, labels = True)
+        h = DiGraph(vertices, h_edges_removed_dups, layout = new_layout, vertex_config= {"fill_color": PURE_BLUE}, edge_config={"tip_config": {"tip_length": 0.2, "tip_width": 0.2}})
         [h.vertices[v].set_z_index(12) for v in vertices]
 
         h_edge_weights = compute_new_weights(h_edges_removed_dups, T, SSSPs, STSPs)
@@ -703,5 +794,108 @@ class BetweennessReduction(Scene):
         h_weight_labels = self.apply_weights_on_curved_edges(h_edges_removed_dups, curved_edges, h_edge_weights)
         self.wait()
 
+        supersouce = ["s"]
+        supersource_graph = Graph(supersouce, [], labels=True).shift(DOWN*3.25).shift(LEFT*4).set_z_index(13)
+
+        self.play(
+            Create(supersource_graph)
+        )
+        self.wait()
+        ss_edges = [CurvedArrow(start_point=supersource_graph.vertices["s"].get_center(),
+                                end_point=h.vertices[0].get_boundary_point(DOWN), angle=-0.4, tip_length=0.2, color=BLUE).set_z_index(12),
+                    CurvedArrow(start_point=supersource_graph.vertices["s"].get_center(),
+                                end_point=h.vertices[1].get_boundary_point(DOWN), angle=-0.2, tip_length=0.2, color=BLUE).set_z_index(12),
+                    CurvedArrow(start_point=supersource_graph.vertices["s"].get_center(),
+                                end_point=h.vertices[2].get_boundary_point(DOWN), angle=0.2, tip_length=0.2, color=BLUE).set_z_index(12),
+                    CurvedArrow(start_point=supersource_graph.vertices["s"].get_center(),
+                                end_point=h.vertices[3].get_boundary_point(DOWN), angle= 0.4, tip_length=0.2, color=BLUE).set_z_index(12),
+                    CurvedArrow(start_point=supersource_graph.vertices["s"].get_center(),
+                                end_point=h.vertices[4].get_boundary_point(DOWN), angle = 0.6, tip_length=0.2, color=BLUE).set_z_index(12),
+                    CurvedArrow(start_point=supersource_graph.vertices["s"].get_center(),
+                                end_point=h.vertices[5].get_boundary_point(DOWN), angle= 1.4, tip_length=0.2, color=BLUE).set_z_index(12)
+                    ]
+        self.play(
+            [Create(a) for a in ss_edges]
+        )
+        self.wait(5)
+
+        self.clear()
+
+        cute_text = Tex(r"Computing $dist_H^{\ell}(V,v)$ for $\ell = 2|T| = 4$ for all $v \in V$ \\ gives us $\phi_1$ as $\phi_1(v) = dist_H^{\ell}(V,v)$")
+        self.add(cute_text)
+        self.wait()
+        self.remove(cute_text)
+
+        h_pos_edges = []
+        h_neg_edges = []
+        for edge in h_edges_removed_dups:
+            if h_edge_weights[edge] < 0:
+                h_neg_edges.append(edge)
+            else:
+                h_pos_edges.append(edge)
+
+        price_function = supersource_BFD(vertices, h_pos_edges, h_neg_edges, h_edge_weights, 4)
+
+        phi_k = [key for key in price_function[-1].keys()]
+        phi_v = [value for value in price_function[-1].values()]
+        print(phi_k)
+        print(phi_v)
+
+        phi_1 = MathTable(
+            [phi_k, phi_v],
+            row_labels=[MathTex("v"), MathTex("\phi_1")],
+            include_outer_lines=True
+        ).scale(0.8).move_to(ORIGIN)
+
+        self.play(
+            Create(phi_1)
+        )
+
+        self.wait(2)
+
+        self.play(
+            Uncreate(phi_1)
+        )
+        self.wait()
+
+        juleskum = Tex(r"Thus, reweighting $G$ with $\phi_1$ by applying \\ $dist_\phi^\ell(u,v) = dist^\ell(u,v) + \phi_1(u) - \phi_1(v)$")
+        self.add(juleskum)
+        self.wait()
+        self.remove(juleskum)
+
+
+        phi_reweighted = {}
+        for ((u,v), w) in weights.items():
+            phi_reweighted[(u,v)] = (w + phi_v[u] - phi_v[v])
+
+        # FRESH GRAPH
+
+        vertices, edges, neg_edges, weights, layout, vertex_labels, _, _ = construct_small_example()
+        vertex_config = {
+            "radius": 0.3
+        }
+        edge_config = {"tip_config": {"tip_length": 0.2, "tip_width": 0.2},
+                       (0, 4): {"stroke_color": BLACK}}
+        small_g = DiGraph(vertices, edges, layout=layout, vertex_config=vertex_config, edge_config=edge_config,
+                          labels=vertex_labels)
+        custom_edge = CurvedArrow(
+            layout[0],  # Start vertex
+            small_g.vertices[4].get_boundary_point(LEFT),  # End vertex
+            angle=0.4,  # Adjust angle to control curve
+            tip_length=0.2  # Optional buffer to prevent overlapping
+        )
+        small_g.edges[(0, 4)].set_z_index(small_g.z_index - 1)
+        small_g.edges[(0, 1)].set_z_index(small_g.z_index + 1)
+        [small_g.vertices[v].set_z_index(small_g.z_index + 2) for v in vertices]
+
+
+
+
+        self.play(
+            Create(small_g),
+            Create(custom_edge)
+        )
+        weight_labels = self.apply_weights(small_g, phi_reweighted)
+        self.wait()
 
 
