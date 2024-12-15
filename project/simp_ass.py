@@ -2,6 +2,31 @@ from manim import *
 
 class SimplifyingAssumption1(Scene):
     def construct(self):
+        title = Tex("Simplifying Assumptions")
+        title.scale(1)
+        h_line = Line(
+            start=title.get_left(),
+            end=title.get_right(),
+        ).next_to(title, DOWN, buff=0.1)
+
+        self.play(
+            Write(title, run_time=2, rate_func=slow_into),
+            Create(h_line, run_time=2, rate_func=slow_into),
+
+        )
+        self.wait(5)
+        self.play(
+            Unwrite(title, run_time=2, rate_func=slow_into),
+            Uncreate(h_line, run_time=2, rate_func=slow_into)
+        )
+        self.wait()
+
+        simp_ass1 = Text("(1) Every negative vertex only has one outgoing edge.", font_size=28)
+        cop_text = simp_ass1.copy()
+        cop_text.shift(UP * 2.8, LEFT*2)
+        self.add(simp_ass1)
+        self.wait(5)
+
         vertices = [1,2,3,4,5,6]
         pos_edges = [(1,3), (2,3)]
         neg_edges = [(3,4), (3,5), (3,6)]
@@ -14,7 +39,8 @@ class SimplifyingAssumption1(Scene):
                                 (3, 5): {"stroke_color": RED},
                                 (3, 6): {"stroke_color": RED}
                                 })
-        self.play(Create(g))
+        self.play(Create(g),
+                  ReplacementTransform(simp_ass1, cop_text))
         self.wait()
 
         edge_labels = {
@@ -29,7 +55,6 @@ class SimplifyingAssumption1(Scene):
              self.play(FadeToColor(g.vertices[3], RED),
                        Write(edge_labels[k][0]),
                        FadeToColor(g.edges[k], RED))
-             ## Ide: gør dem rød, når der kommer vægt på
 
         self.wait()
 
@@ -45,7 +70,8 @@ class SimplifyingAssumption1(Scene):
         formula[4].set_opacity(0)
         formula[6].set_opacity(0)
 
-        self.play(Write(formula[0]), Write(formula[1]), Write(formula[3]), Write(formula[5]), Write(formula[7]))
+        self.play(FadeOut(cop_text),
+                  Write(formula[0]), Write(formula[1]), Write(formula[3]), Write(formula[5]), Write(formula[7]))
         self.wait()
 
         self.play(

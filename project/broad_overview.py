@@ -1,8 +1,8 @@
 import math
+import random as rand
+from math import pow, floor
 
 from manim import *
-import random as rand
-from math import pow, log2, floor
 
 
 def generate_edge_config(neg_edges):
@@ -146,13 +146,14 @@ class BroadOverview(Scene):
 
     def indicate_source(self, graph, layout):
         source = find_most_mid_vertex(layout)
+        source_text = MathTex(r"\text{s}").next_to(graph.vertices[source], LEFT*0.5)
         self.play(
             FadeToColor(graph.vertices[source], GREEN),
-            Write(MathTex(r"\text{s}").next_to(graph.vertices[source], LEFT*0.5))
+            Write(source_text)
         )
         self.wait(5)
 
-        return source
+        return source, source_text
 
     def display_title(self):
         title = Tex("Overview of the Algorithm")
@@ -215,6 +216,34 @@ class BroadOverview(Scene):
 
 
     def construct(self):
+
+
+        title = Text("Presentation of Fineman's algorithm", font_size=50)
+        subtitle = MathTex(r"\text{ solving the SSSP problem in }\tilde{O}(mn^{8/9})\text{ time}", font_size=40)
+        title.move_to(ORIGIN).shift(UP*0.3)
+        subtitle.move_to(ORIGIN).shift(DOWN*0.8)
+
+        h_line = Line(
+            start=title.get_left(),
+            end=title.get_right(),
+        ).next_to(title, DOWN, buff=0.1)
+
+        self.play(
+            Write(title, run_time=2, rate_func=slow_into),
+            Create(h_line, run_time=2, rate_func=slow_into),
+            Write(subtitle, run_time=2, rate_func=slow_into)
+        )
+
+        self.wait(6)
+
+        self.play(
+            Unwrite(title, run_time=2, rate_func=slow_into),
+            Uncreate(h_line, run_time=2, rate_func=slow_into),
+            Unwrite(subtitle, run_time=2, rate_func=slow_into)
+        )
+
+
+
         num_of_vertices = 150
         vertices = [v for v in range(1, num_of_vertices+1)]
 
@@ -273,5 +302,11 @@ class BroadOverview(Scene):
         self.play(Unwrite(text))
         self.wait()
 
-        source = self.indicate_source(graph, layout)
+        source, source_text = self.indicate_source(graph, layout)
         self.run_dijkstra(source, graph, layout)
+
+        self.wait()
+        self.play(FadeOut(text),
+                  Uncreate(graph),
+                  FadeOut(source_text))
+        self.wait()

@@ -896,6 +896,11 @@ class BetweennessReduction(Scene):
             Create(custom_edge)
         )
         weight_labels = self.apply_weights(small_g, phi_reweighted)
+        self.wait(8)
+
+        self.play(Uncreate(small_g),
+                  Uncreate(custom_edge))
+        self.clear()
         self.wait()
 
 

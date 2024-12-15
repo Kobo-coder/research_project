@@ -4,6 +4,15 @@ import numpy as np
 
 class SimplifyingAssumption2(Scene):
     def construct(self):
+
+        simp_ass2= Tex(r"(2) Every vertex must have a degree of at most $O(m/n)$", font_size=28)
+        cop_text = simp_ass2.copy()
+        cop_text.shift(UP * 3, LEFT*3)
+        self.add(simp_ass2)
+        self.wait(5)
+
+
+
         num_vertices = 13
         vertices_g = [i for i in range(num_vertices)]
         edges_g = [(0,1), (0,2)] + [(1,i) for i in range(3, 8)] + [(2,i) for i in range(8, len(vertices_g))]
@@ -20,20 +29,19 @@ class SimplifyingAssumption2(Scene):
 
         g = DiGraph(vertices_g, edges_g, edge_config = edge_config, vertex_config= {0: {"fill_opacity": 0}, 1: {"fill_color": WHITE}, 2: {"fill_color": WHITE}}, layout = vertex_layout)
 
+
+        text2 = MathTex(f"n = {num_vertices - 3}, \ \  m = {len(edges_g)-1}", font_size=28).next_to(cop_text, DOWN, aligned_edge=LEFT)
+
+        self.play(ReplacementTransform(simp_ass2, cop_text))
+        self.wait()
+
         self.play(
-           Create(g)
+            Create(g)
         )
         self.wait(2)
 
-        text1 = Tex(r"(2) Every vertex must have a degree of at most $O(m/n)$", font_size=28).shift(UP * 2.5, LEFT*3)
-        text2 = MathTex(f"n = {num_vertices - 3}, \ \  m = {len(edges_g)-1}", font_size=28).next_to(text1, DOWN, aligned_edge=LEFT)
-
-        self.play(Write(text1))
-        self.wait()
         self.play(Write(text2))
         self.wait()
-
-
 
         self.play(
             Flash(g.vertices[1], color=PURPLE),
@@ -155,7 +163,11 @@ class SimplifyingAssumption2(Scene):
         self.play(FadeIn(i))
         self.wait()
         self.play(FadeOut(h))
+        self.wait(5)
+
+        self.play(
+            Uncreate(i),
+            Unwrite(cop_text),
+            Unwrite(text2)
+        )
         self.wait()
-
-
-
