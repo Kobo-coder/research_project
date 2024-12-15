@@ -823,7 +823,7 @@ class BetweennessReduction(Scene):
 
         cute_text = Tex(r"Computing $dist_H^{\ell}(V,v)$ for $\ell = 2|T| = 4$ for all $v \in V$ \\ gives us $\phi_1$ as $\phi_1(v) = dist_H^{\ell}(V,v)$")
         self.add(cute_text)
-        self.wait()
+        self.wait(7)
         self.remove(cute_text)
 
         h_pos_edges = []
@@ -860,7 +860,7 @@ class BetweennessReduction(Scene):
 
         juleskum = Tex(r"Thus, reweighting $G$ with $\phi_1$ by applying \\ $dist_\phi^\ell(u,v) = dist^\ell(u,v) + \phi_1(u) - \phi_1(v)$")
         self.add(juleskum)
-        self.wait()
+        self.wait(7)
         self.remove(juleskum)
 
 
