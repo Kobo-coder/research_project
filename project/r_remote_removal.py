@@ -27,7 +27,6 @@ class r_remote_removal(Scene):
         for v in vertices:
             dist[v] = math.inf
         dist[q] = 0
-        print(graph)
 
         def dijkstra():
             pq = PriorityQueue()
@@ -61,14 +60,8 @@ class r_remote_removal(Scene):
             round_i_dist = dist.copy()
             del round_i_dist[q]
             all_distances.append(round_i_dist)
-            print(f"Dijkstra's pass {i+1}")
-            for key,value in dist.items():
-                print(f"{key} : {value}")
             if not h == i:
                 bellman_ford_round()
-                print(f"BF pass {i+1}")
-                for key,value in dist.items():
-                    print(f"{key} : {value}")
 
         h_distances = dist.copy()
 
@@ -380,22 +373,21 @@ class r_remote_removal(Scene):
 
         
         gu = MathTex("G^{out(U)}_{\phi_1 + \phi_2}")
-        gu.next_to(g.vertices[1],UP,buff=1)
+        gu.next_to(g.vertices[1],UP*1.75,buff=1)
         to_remove = [v for k,v in g.edges.items() if k in negative_edges and k not in out_U]
         for (u,v) in [(1,2),(7,8)]:
             del g.edges[(u,v)]
         for label in label_to_remove:
             weight_labels.remove(label)
 
-        self.play(*[Uncreate(e,run_time=0.5) for e in to_remove],*[Unwrite(label) for label in label_to_remove])
-        self.wait(2)
-        self.play(Write(gu))
-        self.wait(3)
+        self.play(Write(gu),
+                  *[Uncreate(e,run_time=0.5) for e in to_remove],
+                  *[Unwrite(label) for label in label_to_remove]
+                  )
+        self.wait(5)
         self.play(Uncreate(g),*[Unwrite(label) for label in weight_labels],Unwrite(gu))
 
         distance_maps = self.supersource_BFD(vertices,positive_edges,out_U,edge_weights,1)
-        for k,distances in distance_maps[1].items():
-            print(f"{k} with distance {distances}")
 
         h_weights = defaultdict(int)
         h_vertices,h_edges,h = self.construct_h(g, out_U,positive_edges)
@@ -451,8 +443,9 @@ class r_remote_removal(Scene):
         ).set_z_index(0)
         edges_to_remove = [("6_1", "6_0"),("6_0", "6_1"),("5_1", "5_0"),("5_0", "5_1"),("7_1", "7_0"),("7_0", "7_1")]
         m_objects_remove = [h.edges[e] for e in edges_to_remove]
-        for e in edges_to_remove:
-            h.edges[e].set_z(-2)
+        [h.edges[e].set_z_index(-2) for e in edges_to_remove]
+        [h.vertices[v].set_z_index(10) for v in h_vertices]
+
         self.play(
             Create(h),
             *[Uncreate(e) for e in m_objects_remove],
@@ -543,14 +536,13 @@ class r_remote_removal(Scene):
             Create(dist_table)
         )
         
-        self.wait(2)
+        self.wait(6)
 
         self.play(
             Uncreate(dist_table)
         )
 
         self.wait(2)
-        print(w_c)
 
         self.play(
             Create(g_c),
@@ -559,7 +551,6 @@ class r_remote_removal(Scene):
         self.wait(2)
 
         new_labels = []
-        print(price_function[-1])
         for (u,v) in edges:
             u_pos = g.vertices[u].get_center()
             v_pos = g.vertices[v].get_center()
@@ -581,8 +572,6 @@ class r_remote_removal(Scene):
                 mid[1] = mid[1] +0.3
                 weight.move_to(mid)
             new_labels.append(weight)
-
-        print(new_labels)
         
         to_transform = zip(w_c,new_labels)
 
@@ -604,4 +593,4 @@ class r_remote_removal(Scene):
             *[ReplacementTransform(l1,l2) for (l1,l2) in to_transform],
             ReplacementTransform(g_c,g)
         )   
-        self.wait(4)
+        self.wait(2)

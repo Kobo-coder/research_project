@@ -50,4 +50,4 @@ class MidPart(Scene):
             FadeOut(step3),
             FadeOut(step4)
         )
-        self.wait()
+        self.wait(2)

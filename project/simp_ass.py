@@ -70,7 +70,9 @@ class SimplifyingAssumption1(Scene):
         formula[4].set_opacity(0)
         formula[6].set_opacity(0)
 
-        self.play(FadeOut(cop_text),
+        self.play(FadeOut(cop_text))
+        self.wait()
+        self.play(
                   Write(formula[0]), Write(formula[1]), Write(formula[3]), Write(formula[5]), Write(formula[7]))
         self.wait()
 
@@ -124,4 +126,4 @@ class SimplifyingAssumption1(Scene):
             [TransformFromCopy(formula[0], l[1].copy().set_opacity(1).set_color(WHITE)) for l in edge_labels.values()],
         )
 
-        self.wait()
+        self.wait(2)

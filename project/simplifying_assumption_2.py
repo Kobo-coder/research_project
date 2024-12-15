@@ -163,11 +163,11 @@ class SimplifyingAssumption2(Scene):
         self.play(FadeIn(i))
         self.wait()
         self.play(FadeOut(h))
-        self.wait(5)
+        self.wait(3)
 
         self.play(
             Uncreate(i),
             Unwrite(cop_text),
             Unwrite(text2)
         )
-        self.wait()
+        self.wait(2)

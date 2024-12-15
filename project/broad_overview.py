@@ -309,4 +309,4 @@ class BroadOverview(Scene):
         self.play(FadeOut(text),
                   Uncreate(graph),
                   FadeOut(source_text))
-        self.wait()
+        self.wait(2)

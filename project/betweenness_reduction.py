@@ -901,6 +901,5 @@ class BetweennessReduction(Scene):
         self.play(Uncreate(small_g),
                   Uncreate(custom_edge))
         self.clear()
-        self.wait()
 
-
+        self.wait(2)
