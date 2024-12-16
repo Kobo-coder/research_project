@@ -507,7 +507,7 @@ class BetweennessReduction(Scene):
             dist = {v: math.inf for v in graph.vertices}
             dist[source] = 0
 
-        header = Tex(r"Computing $\beta$-hop distances from vertex $0$, for $\beta = 1$", font_size=35).to_corner(LEFT + UP)
+        header = Tex(r"Computing $h$-hop distances from vertex $0$, for $h = 1$", font_size=35).to_corner(LEFT + UP)
         text = Text("Running ", font_size=22).align_to(header, LEFT + DOWN).shift(DOWN*0.5)
         dijk = Text("Dijkstra", font_size=22).next_to(text, buff=0.2)
         bell = Text("Bellman-Ford", font_size=22).next_to(text, buff=0.2)
@@ -665,7 +665,7 @@ class BetweennessReduction(Scene):
         # the algorithm sets c = 3
         T = select_subset(vertices, 1, 3)
 
-        self.play([FadeToColor(g.vertices[v], BLUE) for v in T])
+        self.play([FadeToColor(g.vertices[v], YELLOW) for v in T])
         self.wait()
 
         beta = 1
@@ -766,7 +766,7 @@ class BetweennessReduction(Scene):
 
         # explanatory_text1 = Tex(r"$\forall v \in T$, we compute the $\beta$-hop SSSP and STSP to and from $v$")
         # explanatory_text2 = Tex("This is done by running BFD")
-        explanatory_text3 = Tex(r"Based on the computed $\beta$-hop distances,\\ we construct an auxiliary graph $H$").set_z_index(11)
+        explanatory_text3 = Tex(r"Based on the computed $h$-hop distances,\\ we construct an auxiliary graph $H$").set_z_index(11)
 
 
         self.add(explanatory_text3)
